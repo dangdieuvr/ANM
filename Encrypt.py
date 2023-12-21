@@ -1,18 +1,17 @@
 from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
-from base64 import b64encode
+from Crypto.Util.Padding import pad
+import base64
 
-def pad(text):
-    # Ensure input is bytes
-    if isinstance(text, str):
-        text = text.encode('utf-8')
-    # Padding for AES block size
-    padding = AES.block_size - len(text) % AES.block_size
-    return text + bytes([padding] * padding)
+def encrypt(text, key):
+    # Generate a random IV (Initialization Vector)
+    iv = AES.new(key, AES.MODE_CBC).iv
 
-def encrypt(plain_text, key):
-    cipher = AES.new(key, AES.MODE_CBC)
-    cipher_text = cipher.encrypt(pad(plain_text))
-    iv = b64encode(cipher.iv).decode('utf-8')
-    encrypted_text = b64encode(cipher_text).decode('utf-8')
-    return f"IV: {iv}\nEncrypted Text: {encrypted_text}"
+    # Create a cipher object with the key and IV
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+
+    # Pad the text and encrypt it
+    padded_text = pad(text.encode('utf-8'), AES.block_size)
+    encrypted_text = cipher.encrypt(padded_text)
+
+    # Return a tuple containing the encrypted text and IV
+    return base64.b64encode(encrypted_text).decode('utf-8'), base64.b64encode(iv).decode('utf-8')
